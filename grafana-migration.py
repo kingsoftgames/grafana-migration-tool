@@ -10,6 +10,8 @@ import os, argparse, json, copy
 from os import listdir
 from os.path import isfile, join
 
+import config
+
 
 '''
 Script requires following variables to be set in the code:
@@ -25,16 +27,15 @@ GF_KEY_DST="789XYZ"                             # destination Grafana URL
 
 '''
 
-OUTPUT_FOLDER='exported_dashboards'
-
+OUTPUT_FOLDER=os.environ['EXPORT_TARGET_DIR']
 
 # SOURCE GRAFANA DETAILS
-GF_URL_SRC="http://old-grafana.mydomain.net"
-GF_KEY_SRC = "OLD_GRAFANA_API_KEY"
+GF_URL_SRC=config.GF_URL_SRC
+GF_KEY_SRC=config.GF_KEY_SRC
 
 # DESTINATION GRAFANA DETAILS
-GF_URL_DST = "http://new-grafana.mydomain.com"
-GF_KEY_DST = "NEW_GRAFANA_API_KEY"
+GF_URL_DST=config.GF_URL_DST
+GF_KEY_DST=config.GF_KEY_DST
 
 # GRAFANA API ENDPOINTS
 GF_DASH="/api/dashboards/db"
@@ -53,12 +54,14 @@ argParser = argparse.ArgumentParser()
 argParser.add_argument('--export', action='store_true', help='export grafana folders and dashboards into subdirectory "OUTPUT_FOLDER"')
 argParser.add_argument('--import_folders', action='store_true', help='import grafana folder structure from "OUTPUT_FOLDER"/grafana-folders.json')
 argParser.add_argument('--import_dashboards_from', type=str, help='import all grafana dashboards from specified subfolder inside "OUTSIDE_FOLDER"')
+argParser.add_argument('--import_dashboards', action='store_true', help='import all grafana dashboards inside "OUTSIDE_FOLDER"')
 argParser.add_argument('--delete_folders', action='store_true', help='delete all existing folders and dashboards on destination Grafana')
 passedArgs = vars(argParser.parse_args())
 
 EXPORT = True if passedArgs['export'] is True else False
 IMPORT_FOLDERS = True if passedArgs['import_folders'] is True else False
 IMPORT_DASHBOARDS_FROM = passedArgs['import_dashboards_from']
+IMPORT_DASHBOARDS = True if passedArgs['import_dashboards'] is True else False
 DELETE_FOLDERS = True if passedArgs['delete_folders'] is True else False
 
 # To set null value in JSON
@@ -237,12 +240,30 @@ def dashboard_import(grafana_folder):
             ERROR_COUNTER += 1
             print('error :', e)
 
+def dashboards_import():
+    global ERROR_COUNTER
+    try:
+        print('*' * 50)
+        print('Importing all the dashboards to GRAFANA :', GF_URL_DST)
+        print('*' * 50)
+        with open(OUTPUT_FOLDER + '/' + 'grafana-folders.json', "r") as f:
+            folder_list = json.load(f)
+            #print(folder_list)
+        for each in folder_list:
+            dashboard_import(each['title'])
+            print('Importing folder :', each['title'])
+    except Exception as e:
+        ERROR_COUNTER += 1
+        print('dashboards_import() raised the following exception :', e)
+
 if __name__ == '__main__':
     print("Grafana migration script is starting ...")
     if EXPORT:
         dashboard_export()
     elif IMPORT_FOLDERS:
         dashboard_folder_import()
+    elif IMPORT_DASHBOARDS:
+        dashboards_import()
     elif IMPORT_DASHBOARDS_FROM:
         dashboard_import(IMPORT_DASHBOARDS_FROM)
     elif DELETE_FOLDERS:
@@ -261,4 +282,3 @@ if __name__ == '__main__':
 
     if ERROR_COUNTER > 0:
         print('Number of errors found {0}. Please check script log to find details'.format(ERROR_COUNTER))
-
