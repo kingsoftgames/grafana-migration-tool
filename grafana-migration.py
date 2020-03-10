@@ -35,10 +35,21 @@ GF_KEY_DST=""
 SURE_STRING='No'
 
 # Set environment variables to specify CONFIG file path and OUTPUT_FOLDER path.
-CONFIG=os.environ['CONFIG_FILE']
+try:
+    CONFIG=os.environ['CONFIG_FILE']
+except Exception:
+    print('Environment variable CONFIG_FILE not found, use default file.')
+    cwd = os.getcwd()
+    CONFIG = cwd+'/config.py'
+
 exec(open(CONFIG).read())
 
-OUTPUT_FOLDER=os.environ['EXPORT_TARGET_DIR']
+try:
+    OUTPUT_FOLDER=os.environ['EXPORT_TARGET_DIR']
+except Exception:
+    print('Environment variable EXPORT_TARGET_DIR not found, use default directory.')
+    OUTPUT_FOLDER='exported_dashboards'
+
 
 # GRAFANA API ENDPOINTS
 GF_DASH="/api/dashboards/db"
@@ -282,3 +293,4 @@ if __name__ == '__main__':
 
     if ERROR_COUNTER > 0:
         print('Number of errors found {0}. Please check script log to find details'.format(ERROR_COUNTER))
+        exit(1)
