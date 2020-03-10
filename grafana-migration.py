@@ -53,14 +53,12 @@ SURE_STRING = 'No'
 argParser = argparse.ArgumentParser()
 argParser.add_argument('--export', action='store_true', help='export grafana folders and dashboards into subdirectory "OUTPUT_FOLDER"')
 argParser.add_argument('--import_folders', action='store_true', help='import grafana folder structure from "OUTPUT_FOLDER"/grafana-folders.json')
-argParser.add_argument('--import_dashboards_from', type=str, help='import all grafana dashboards from specified subfolder inside "OUTSIDE_FOLDER"')
-argParser.add_argument('--import_dashboards', action='store_true', help='import all grafana dashboards inside "OUTSIDE_FOLDER"')
+argParser.add_argument('--import_dashboards', action='store_true', help='import all grafana dashboards inside "OUTPUT_FOLDER"')
 argParser.add_argument('--delete_folders', action='store_true', help='delete all existing folders and dashboards on destination Grafana')
 passedArgs = vars(argParser.parse_args())
 
 EXPORT = True if passedArgs['export'] is True else False
 IMPORT_FOLDERS = True if passedArgs['import_folders'] is True else False
-IMPORT_DASHBOARDS_FROM = passedArgs['import_dashboards_from']
 IMPORT_DASHBOARDS = True if passedArgs['import_dashboards'] is True else False
 DELETE_FOLDERS = True if passedArgs['delete_folders'] is True else False
 
@@ -264,8 +262,6 @@ if __name__ == '__main__':
         dashboard_folder_import()
     elif IMPORT_DASHBOARDS:
         dashboards_import()
-    elif IMPORT_DASHBOARDS_FROM:
-        dashboard_import(IMPORT_DASHBOARDS_FROM)
     elif DELETE_FOLDERS:
         dashboard_folder_cleanup()
     else:
