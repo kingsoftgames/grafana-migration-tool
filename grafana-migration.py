@@ -34,7 +34,7 @@ GF_KEY_DST=""
 # SET this value to 'Yes I want delete all the dashboards' if you want destroy content of destination Grafana
 SURE_STRING='No'
 
-# Set environment variables to specify CONFIG file path by '' and OUTPUT_FOLDER path.
+# Set environment variables to specify CONFIG file path and OUTPUT_FOLDER path.
 CONFIG=os.environ['CONFIG_FILE']
 exec(open(CONFIG).read())
 
