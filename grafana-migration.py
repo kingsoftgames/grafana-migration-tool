@@ -10,9 +10,6 @@ import os, argparse, json, copy
 from os import listdir
 from os.path import isfile, join
 
-import config
-
-
 '''
 Script requires following variables to be set in the code:
 OUTPUT_FOLDER="export_folder"   #local directory to export and import dashboards and folders
@@ -27,15 +24,11 @@ GF_KEY_DST="789XYZ"                             # destination Grafana URL
 
 '''
 
+# Set environment variables to specify CONFIG file path by '' and OUTPUT_FOLDER path.
+CONFIG=os.environ['CONFIG_FILE']
+exec(open(CONFIG).read())
+
 OUTPUT_FOLDER=os.environ['EXPORT_TARGET_DIR']
-
-# SOURCE GRAFANA DETAILS
-GF_URL_SRC=config.GF_URL_SRC
-GF_KEY_SRC=config.GF_KEY_SRC
-
-# DESTINATION GRAFANA DETAILS
-GF_URL_DST=config.GF_URL_DST
-GF_KEY_DST=config.GF_KEY_DST
 
 # GRAFANA API ENDPOINTS
 GF_DASH="/api/dashboards/db"
@@ -45,9 +38,6 @@ GF_FLD="/api/folders"
 
 headers_src = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GF_KEY_SRC}
 headers_dst = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GF_KEY_DST}
-
-# SET this value to SURE_STRING = 'Yes I want delete all the dashboards' if you want destroy content of destination Grafana
-SURE_STRING=config.SURE_STRING
 
 
 argParser = argparse.ArgumentParser()
