@@ -47,7 +47,7 @@ headers_src = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + 
 headers_dst = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GF_KEY_DST}
 
 # SET this value to SURE_STRING = 'Yes I want delete all the dashboards' if you want destroy content of destination Grafana
-SURE_STRING = 'No'
+SURE_STRING = 'Yes I want delete all the dashboards'
 
 
 argParser = argparse.ArgumentParser()
