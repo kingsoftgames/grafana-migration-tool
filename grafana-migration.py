@@ -47,19 +47,21 @@ headers_src = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + 
 headers_dst = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GF_KEY_DST}
 
 # SET this value to SURE_STRING = 'Yes I want delete all the dashboards' if you want destroy content of destination Grafana
-SURE_STRING = 'Yes I want delete all the dashboards'
+SURE_STRING=config.SURE_STRING
 
 
 argParser = argparse.ArgumentParser()
 argParser.add_argument('--export', action='store_true', help='export grafana folders and dashboards into subdirectory "OUTPUT_FOLDER"')
 argParser.add_argument('--import_folders', action='store_true', help='import grafana folder structure from "OUTPUT_FOLDER"/grafana-folders.json')
-argParser.add_argument('--import_dashboards', action='store_true', help='import all grafana dashboards inside "OUTPUT_FOLDER"')
+argParser.add_argument('--import_dashboards_from', type=str, help='import all grafana dashboards from specified subfolder inside "OUTPUT_FOLDER"')
+argParser.add_argument('--import_dashboards_all', action='store_true', help='import all grafana dashboards inside "OUTPUT_FOLDER"')
 argParser.add_argument('--delete_folders', action='store_true', help='delete all existing folders and dashboards on destination Grafana')
 passedArgs = vars(argParser.parse_args())
 
 EXPORT = True if passedArgs['export'] is True else False
 IMPORT_FOLDERS = True if passedArgs['import_folders'] is True else False
-IMPORT_DASHBOARDS = True if passedArgs['import_dashboards'] is True else False
+IMPORT_DASHBOARDS_FROM = passedArgs['import_dashboards_from']
+IMPORT_DASHBOARDS_ALL = True if passedArgs['import_dashboards_all'] is True else False
 DELETE_FOLDERS = True if passedArgs['delete_folders'] is True else False
 
 # To set null value in JSON
@@ -248,8 +250,8 @@ def dashboards_import():
             folder_list = json.load(f)
             #print(folder_list)
         for each in folder_list:
-            dashboard_import(each['title'])
             print('Importing folder :', each['title'])
+            dashboard_import(each['title'])
     except Exception as e:
         ERROR_COUNTER += 1
         print('dashboards_import() raised the following exception :', e)
@@ -260,7 +262,9 @@ if __name__ == '__main__':
         dashboard_export()
     elif IMPORT_FOLDERS:
         dashboard_folder_import()
-    elif IMPORT_DASHBOARDS:
+    elif IMPORT_DASHBOARDS_FROM:
+        dashboard_import(IMPORT_DASHBOARDS_FROM)
+    elif IMPORT_DASHBOARDS_ALL:
         dashboards_import()
     elif DELETE_FOLDERS:
         dashboard_folder_cleanup()

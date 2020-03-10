@@ -39,7 +39,15 @@ python grafana-migration.py --import_dashboards_from Cassandra
 It connects to remote Grafana to get uid numbers of previosly imported folders and after that reads every file inside folder OUTPUT_DIRECTORY/K8S/*json modifies the Id to match existing folder and then imports.
 This must be repeated for each of the folders where we have exported dashboard json files.
 
-4. Delete folders hierarchy from Grafana
+4. Import all Grafana dashboards
+
+```sh
+python grafana-migration.py --import_dashboards_all
+```
+
+It will import all existing dashboards in subdirectories inside the OUTPUT_DIRECTORY.
+
+5. Delete folders hierarchy from Grafana
 ```sh
 python grafana-migration.py --delete_folders
 ```
@@ -48,7 +56,7 @@ Anyway it helps cleanup during testing of this migration.
 
 
 # Preparation
-Create API keys for the source and destination Grafana instances. Then inside of the script there are 5 VARIABLES which must be defined:
+Create API keys for the source and destination Grafana instances. Then inside of the script `config.py` there are 5 VARIABLES which must be defined:
 <p>GF_URL_SRC - source Grafana url where we import dashboards from</p>
 <p>GF_KEY_SRC - API Key for this source Grafana</p>
 <p>GF_URL_DST - destination Grafana url where we import dashboards and folders into. Also delete operation uses only this endpoint.</p>
@@ -57,4 +65,3 @@ Create API keys for the source and destination Grafana instances. Then inside of
 <p>If deletion option is required then the last variable must be set: SURE_STRING</p>
 SURE_STRING = 'Yes I want delete all the dashboards'
 Otherwise scripts do nothing.
-
