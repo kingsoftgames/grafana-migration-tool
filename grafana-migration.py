@@ -24,6 +24,16 @@ GF_KEY_DST="789XYZ"                             # destination Grafana URL
 
 '''
 
+# SOURCE GRAFANA DETAILS HERE
+GF_URL_SRC=""
+GF_KEY_SRC=""
+# DESTINATION GRAFANA DETAILS HERE
+GF_URL_DST=""
+GF_KEY_DST=""
+
+# SET this value to 'Yes I want delete all the dashboards' if you want destroy content of destination Grafana
+SURE_STRING='No'
+
 # Set environment variables to specify CONFIG file path by '' and OUTPUT_FOLDER path.
 CONFIG=os.environ['CONFIG_FILE']
 exec(open(CONFIG).read())

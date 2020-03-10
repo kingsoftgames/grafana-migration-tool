@@ -67,7 +67,7 @@ Before executing the `grafana-migration.py`, you need to set two **environment v
   
     Path where the exported data are written into.
 
-Create API keys for the source and destination Grafana instances. Then inside of the script `config.py` there are 5 VARIABLES which must be defined:
+Create API keys for the source and destination Grafana instances. Then inside of the script `config.py` there are 5 VARIABLES which must be defined to override their default values:
 <p>GF_URL_SRC - source Grafana url where we import dashboards from</p>
 <p>GF_KEY_SRC - API Key for this source Grafana</p>
 <p>GF_URL_DST - destination Grafana url where we import dashboards and folders into. Also delete operation uses only this endpoint.</p>
