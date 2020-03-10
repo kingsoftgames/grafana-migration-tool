@@ -116,7 +116,7 @@ def dashboard_export():
     except Exception as e:
         print('dashboard_exports(): Error found while getting information from source Grafana :', e)
         ERROR_COUNTER += 1
-        exit(0)
+        exit(1)
 
     dirdict_title = {}
     dirdict_id = {}
@@ -220,14 +220,14 @@ def dashboard_import(grafana_folder):
 
     except Exception as e:
         print('dashboard_import() exception: ', e)
-        exit(0)
+        exit(1)
 
     try:
         grafana_dashboard_files = [dsh_file for dsh_file in listdir(import_folder) if isfile(join(import_folder, dsh_file))]
     except Exception as e:
         ERROR_COUNTER += 1
         print('Error found when listing json files in folder {0}'.format(grafana_folder))
-        exit(0)
+        exit(1)
 
     for eachfile in grafana_dashboard_files:
         try:
