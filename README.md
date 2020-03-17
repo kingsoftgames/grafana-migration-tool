@@ -57,7 +57,7 @@ Anyway it helps cleanup during testing of this migration.
 
 # Preparation
 
-Before executing the `grafana-migration.py`, you need to set two **environment variables** :
+Before executing the `grafana-migration.py`, you can set two **environment variables** to override default values :
 
 - CONFIG_FILE
 
@@ -67,7 +67,9 @@ Before executing the `grafana-migration.py`, you need to set two **environment v
   
     Path where the exported data are written into.
 
-Create API keys for the source and destination Grafana instances. Then inside of the script `config.py` there are 5 VARIABLES which must be defined to override their default values:
+If the **environment variables** are not set, `CONFIG_FILE` will be `config.py` and `EXPORT_TARGET_DIR` will be named to `exported_dashboards` at current directory as default values.
+
+Create API keys for the source and destination Grafana instances. Then inside of the script `config.py` there are 5 VARIABLES:
 <p>GF_URL_SRC - source Grafana url where we import dashboards from</p>
 <p>GF_KEY_SRC - API Key for this source Grafana</p>
 <p>GF_URL_DST - destination Grafana url where we import dashboards and folders into. Also delete operation uses only this endpoint.</p>
