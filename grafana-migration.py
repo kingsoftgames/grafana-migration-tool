@@ -58,8 +58,8 @@ GF_DASH_GET="/api/dashboards/uid/"
 GF_HOME_DASH_GET="/api/dashboards/home"
 GF_FLD="/api/folders"
 
-headers_src = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GF_KEY_SRC}
-headers_dst = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GF_KEY_DST}
+headers_src = {'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GF_KEY_SRC}
+headers_dst = {'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GF_KEY_DST}
 
 
 argParser = argparse.ArgumentParser()
@@ -182,7 +182,7 @@ def dashboard_home_export():
         print('*** home dashboard exported :', filepath)
 
     except Exception as e:
-        print('dashboard_exports(): Error found while getting information from source Grafana :', e)
+        print('dashboard_home_export(): Error found while getting information from source Grafana :', e)
         ERROR_COUNTER += 1
 
 def dashboard_folder_import():
