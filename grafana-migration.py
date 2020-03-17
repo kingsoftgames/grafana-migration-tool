@@ -55,6 +55,7 @@ except Exception:
 GF_DASH="/api/dashboards/db"
 GF_SEARCH="/api/search?query=&"
 GF_DASH_GET="/api/dashboards/uid/"
+GF_HOME_DASH_GET="/api/dashboards/home"
 GF_FLD="/api/folders"
 
 headers_src = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GF_KEY_SRC}
@@ -63,16 +64,20 @@ headers_dst = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + 
 
 argParser = argparse.ArgumentParser()
 argParser.add_argument('--export', action='store_true', help='export grafana folders and dashboards into subdirectory "OUTPUT_FOLDER"')
+argParser.add_argument('--export_home', action='store_true', help='export grafana home dashboard into subdirectory "OUTPUT_FOLDER"')
 argParser.add_argument('--import_folders', action='store_true', help='import grafana folder structure from "OUTPUT_FOLDER"/grafana-folders.json')
 argParser.add_argument('--import_dashboards_from', type=str, help='import all grafana dashboards from specified subfolder inside "OUTPUT_FOLDER"')
 argParser.add_argument('--import_dashboards_all', action='store_true', help='import all grafana dashboards inside "OUTPUT_FOLDER"')
+argParser.add_argument('--import_home', action='store_true', help='import grafana home dashboard inside "OUTPUT_FOLDER"')
 argParser.add_argument('--delete_folders', action='store_true', help='delete all existing folders and dashboards on destination Grafana')
 passedArgs = vars(argParser.parse_args())
 
 EXPORT = True if passedArgs['export'] is True else False
+EXPORT_HOME = True if passedArgs['export_home'] is True else False
 IMPORT_FOLDERS = True if passedArgs['import_folders'] is True else False
 IMPORT_DASHBOARDS_FROM = passedArgs['import_dashboards_from']
 IMPORT_DASHBOARDS_ALL = True if passedArgs['import_dashboards_all'] is True else False
+IMPORT_HOME = True if passedArgs['import_home'] is True else False
 DELETE_FOLDERS = True if passedArgs['delete_folders'] is True else False
 
 # To set null value in JSON
@@ -159,6 +164,26 @@ def dashboard_export():
         else:
             #print('#' * 5, ' --- NOT DASHBOARD --- ', '#' * 5)
             pass
+
+def dashboard_home_export():
+    global ERROR_COUNTER
+    try:
+        response = requests.get(GF_URL_SRC + GF_HOME_DASH_GET, headers=headers_src)
+        if response.status_code != 200:
+            raise Exception(response.status_code, response.text)
+        home_dashboard_src = response.json()
+
+        if not os.path.exists(OUTPUT_FOLDER):
+            os.makedirs(OUTPUT_FOLDER)
+        filepath = OUTPUT_FOLDER + '/' + 'home-dashboard.json'
+        file_json = open(filepath, "w")
+        home_dashboard_export = copy.deepcopy(home_dashboard_src)
+        json.dump(home_dashboard_src, file_json, indent=4, sort_keys=False)
+        print('*** home dashboard exported :', filepath)
+
+    except Exception as e:
+        print('dashboard_exports(): Error found while getting information from source Grafana :', e)
+        ERROR_COUNTER += 1
 
 def dashboard_folder_import():
     global ERROR_COUNTER
@@ -267,16 +292,36 @@ def dashboards_import():
         ERROR_COUNTER += 1
         print('dashboards_import() raised the following exception :', e)
 
+def dashboard_home_import():
+    global ERROR_COUNTER
+    try:
+        print('*' * 50)
+        print('Importing home dashboard to GRAFANA :', GF_URL_DST)
+        print('*' * 50)
+        with open(OUTPUT_FOLDER + '/' + 'home-dashboard.json', "r") as f:
+            home_dashboard = json.load(f)
+        response = requests.post(GF_URL_DST + GF_DASH, data=json.dumps(home_dashboard), headers=headers_dst)
+        if response.status_code != 200:
+            raise Exception(response.status_code, response.text)
+
+    except Exception as e:
+        ERROR_COUNTER += 1
+        print('dashboard_home_import(): error found :', e)
+
 if __name__ == '__main__':
     print("Grafana migration script is starting ...")
     if EXPORT:
         dashboard_export()
+    elif EXPORT_HOME:
+        dashboard_home_export()
     elif IMPORT_FOLDERS:
         dashboard_folder_import()
     elif IMPORT_DASHBOARDS_FROM:
         dashboard_import(IMPORT_DASHBOARDS_FROM)
     elif IMPORT_DASHBOARDS_ALL:
         dashboards_import()
+    elif IMPORT_HOME:
+        dashboard_home_import()
     elif DELETE_FOLDERS:
         dashboard_folder_cleanup()
     else:
