@@ -55,29 +55,30 @@ except Exception:
 GF_DASH="/api/dashboards/db"
 GF_SEARCH="/api/search?query=&"
 GF_DASH_GET="/api/dashboards/uid/"
-GF_HOME_DASH_GET="/api/dashboards/home"
+# See https://grafana.com/docs/grafana/latest/http_api/preferences/
+GF_PREFS="/api/user/preferences"
 GF_FLD="/api/folders"
 
-headers_src = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GF_KEY_SRC}
-headers_dst = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GF_KEY_DST}
+headers_src = {'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GF_KEY_SRC}
+headers_dst = {'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GF_KEY_DST}
 
 
 argParser = argparse.ArgumentParser()
 argParser.add_argument('--export', action='store_true', help='export grafana folders and dashboards into subdirectory "OUTPUT_FOLDER"')
-argParser.add_argument('--export_home', action='store_true', help='export grafana home dashboard into subdirectory "OUTPUT_FOLDER"')
+argParser.add_argument('--export_prefs', action='store_true', help='export grafana preferences into subdirectory "OUTPUT_FOLDER"')
 argParser.add_argument('--import_folders', action='store_true', help='import grafana folder structure from "OUTPUT_FOLDER"/grafana-folders.json')
 argParser.add_argument('--import_dashboards_from', type=str, help='import all grafana dashboards from specified subfolder inside "OUTPUT_FOLDER"')
 argParser.add_argument('--import_dashboards_all', action='store_true', help='import all grafana dashboards inside "OUTPUT_FOLDER"')
-argParser.add_argument('--import_home', action='store_true', help='import grafana home dashboard inside "OUTPUT_FOLDER"')
+argParser.add_argument('--import_prefs', action='store_true', help='import grafana preferences inside "OUTPUT_FOLDER"')
 argParser.add_argument('--delete_folders', action='store_true', help='delete all existing folders and dashboards on destination Grafana')
 passedArgs = vars(argParser.parse_args())
 
 EXPORT = True if passedArgs['export'] is True else False
-EXPORT_HOME = True if passedArgs['export_home'] is True else False
+EXPORT_PREFS = True if passedArgs['export_prefs'] is True else False
 IMPORT_FOLDERS = True if passedArgs['import_folders'] is True else False
 IMPORT_DASHBOARDS_FROM = passedArgs['import_dashboards_from']
 IMPORT_DASHBOARDS_ALL = True if passedArgs['import_dashboards_all'] is True else False
-IMPORT_HOME = True if passedArgs['import_home'] is True else False
+IMPORT_PREFS = True if passedArgs['import_prefs'] is True else False
 DELETE_FOLDERS = True if passedArgs['delete_folders'] is True else False
 
 # To set null value in JSON
@@ -130,6 +131,10 @@ def dashboard_export():
         dirdict_title[key['uid']] = key['title'].replace(" ","_").replace("(","_").replace(")","_")
         dirdict_id[key['uid']] = key['id']
 
+    with open(OUTPUT_FOLDER + '/' + 'preferences.json', 'r') as f:
+        prefs_src = json.load(f)
+    HOME_DASH_ID = prefs_src['homeDashboardId']
+
     for each in dashboard_list_src:
         if each['type'] in 'dash-db':
             new_title = each['title'].replace("/","_").replace(" ","_").replace(",","_")
@@ -152,6 +157,11 @@ def dashboard_export():
                     print('r.status_code + r.reason :', r.status_code, r.reason)
                 dashboard_content = r.json()
                 del dashboard_content['meta']
+                if (dashboard_content['dashboard']['id'] == HOME_DASH_ID):
+                    HOME_DASH_UID = dashboard_content['dashboard']['uid']
+                    dash_uid_filepath = OUTPUT_FOLDER + "/" + 'HOME_DASH_UID.txt'
+                    dash_uid_file = open(dash_uid_filepath, "w")
+                    dash_uid_file.write(HOME_DASH_UID)
                 dashboard_content['dashboard']['id'] = null
                 dashboard_content['folderId'] = folder_id
                 dashboard_content['folderUid'] = folder_uid
@@ -165,24 +175,24 @@ def dashboard_export():
             #print('#' * 5, ' --- NOT DASHBOARD --- ', '#' * 5)
             pass
 
-def dashboard_home_export():
+def prefs_export():
     global ERROR_COUNTER
     try:
-        response = requests.get(GF_URL_SRC + GF_HOME_DASH_GET, headers=headers_src)
+        response = requests.get(GF_URL_SRC + GF_PREFS, headers=headers_src)
         if response.status_code != 200:
             raise Exception(response.status_code, response.text)
-        home_dashboard_src = response.json()
+        prefs_src = response.json()
 
         if not os.path.exists(OUTPUT_FOLDER):
             os.makedirs(OUTPUT_FOLDER)
-        filepath = OUTPUT_FOLDER + '/' + 'home-dashboard.json'
+        filepath = OUTPUT_FOLDER + '/' + 'preferences.json'
         file_json = open(filepath, "w")
-        home_dashboard_export = copy.deepcopy(home_dashboard_src)
-        json.dump(home_dashboard_src, file_json, indent=4, sort_keys=False)
-        print('*** home dashboard exported :', filepath)
+        prefs_export = copy.deepcopy(prefs_src)
+        json.dump(prefs_src, file_json, indent=4, sort_keys=False)
+        print('*** preferences exported :', filepath)
 
     except Exception as e:
-        print('dashboard_exports(): Error found while getting information from source Grafana :', e)
+        print('prefs_export(): Error found while getting information from source Grafana :', e)
         ERROR_COUNTER += 1
 
 def dashboard_folder_import():
@@ -292,36 +302,47 @@ def dashboards_import():
         ERROR_COUNTER += 1
         print('dashboards_import() raised the following exception :', e)
 
-def dashboard_home_import():
+def prefs_import():
     global ERROR_COUNTER
     try:
         print('*' * 50)
-        print('Importing home dashboard to GRAFANA :', GF_URL_DST)
+        print('Importing preferences to GRAFANA :', GF_URL_DST)
         print('*' * 50)
-        with open(OUTPUT_FOLDER + '/' + 'home-dashboard.json', "r") as f:
-            home_dashboard = json.load(f)
-        response = requests.post(GF_URL_DST + GF_DASH, data=json.dumps(home_dashboard), headers=headers_dst)
+        dash_uid_filepath = OUTPUT_FOLDER + "/" + 'HOME_DASH_UID.txt'
+        with open(dash_uid_filepath, "r") as f:
+            HOME_DASH_UID = f.readline()
+        response = requests.get(GF_URL_DST + GF_DASH_GET + HOME_DASH_UID, headers=headers_dst)
+        if response.status_code != 200:
+            raise Exception(response.status_code, response.text)
+        home_dst = response.json()
+        home_dst_id = home_dst['dashboard']['id']
+        filepath = OUTPUT_FOLDER + '/' + 'preferences.json'
+
+        with open(filepath, "r") as f:
+            prefs = json.load(f)
+        prefs['homeDashboardId'] = home_dst_id
+        response = requests.put(GF_URL_DST + GF_PREFS, data=json.dumps(prefs), headers=headers_dst)
         if response.status_code != 200:
             raise Exception(response.status_code, response.text)
 
     except Exception as e:
         ERROR_COUNTER += 1
-        print('dashboard_home_import(): error found :', e)
+        print('prefs_import(): error found :', e)
 
 if __name__ == '__main__':
     print("Grafana migration script is starting ...")
     if EXPORT:
         dashboard_export()
-    elif EXPORT_HOME:
-        dashboard_home_export()
+    elif EXPORT_PREFS:
+        prefs_export()
     elif IMPORT_FOLDERS:
         dashboard_folder_import()
     elif IMPORT_DASHBOARDS_FROM:
         dashboard_import(IMPORT_DASHBOARDS_FROM)
     elif IMPORT_DASHBOARDS_ALL:
         dashboards_import()
-    elif IMPORT_HOME:
-        dashboard_home_import()
+    elif IMPORT_PREFS:
+        prefs_import()
     elif DELETE_FOLDERS:
         dashboard_folder_cleanup()
     else:
