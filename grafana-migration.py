@@ -261,7 +261,7 @@ def dashboard_import(grafana_folder):
         grafana_dashboard_files = [dsh_file for dsh_file in listdir(import_folder) if isfile(join(import_folder, dsh_file))]
     except Exception as e:
         ERROR_COUNTER += 1
-        print('Error found when listing json files in folder {0}'.format(grafana_folder))
+        print('Error found when listing json files in folder {0}:'.format(grafana_folder), e)
         exit(1)
 
     for eachfile in grafana_dashboard_files:
