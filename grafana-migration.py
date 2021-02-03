@@ -8,7 +8,7 @@ import requests
 import time
 import os, argparse, json, copy
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, exists
 
 '''
 Script requires following variables to be set in the code:
@@ -309,18 +309,20 @@ def prefs_import():
         print('Importing preferences to GRAFANA :', GF_URL_DST)
         print('*' * 50)
         dash_uid_filepath = OUTPUT_FOLDER + "/" + 'HOME_DASH_UID.txt'
-        with open(dash_uid_filepath, "r") as f:
-            HOME_DASH_UID = f.readline()
-        response = requests.get(GF_URL_DST + GF_DASH_GET + HOME_DASH_UID, headers=headers_dst)
-        if response.status_code != 200:
-            raise Exception(response.status_code, response.text)
-        home_dst = response.json()
-        home_dst_id = home_dst['dashboard']['id']
         filepath = OUTPUT_FOLDER + '/' + 'preferences.json'
-
         with open(filepath, "r") as f:
             prefs = json.load(f)
-        prefs['homeDashboardId'] = home_dst_id
+        # Not exists means src grafana has no home dashboard.
+        if os.path.exists(dash_uid_filepath):
+            with open(dash_uid_filepath, "r") as f:
+                HOME_DASH_UID = f.readline()
+            response = requests.get(GF_URL_DST + GF_DASH_GET + HOME_DASH_UID, headers=headers_dst)
+            if response.status_code != 200:
+                raise Exception(response.status_code, response.text)
+            home_dst = response.json()
+            home_dst_id = home_dst['dashboard']['id']
+            prefs['homeDashboardId'] = home_dst_id
+
         response = requests.put(GF_URL_DST + GF_PREFS, data=json.dumps(prefs), headers=headers_dst)
         if response.status_code != 200:
             raise Exception(response.status_code, response.text)
